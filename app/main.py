@@ -1,4 +1,4 @@
-# ❗ TODO : Import Uvicorn and use run method to run the uvicorn when ever this file has been executed
+import uvicorn 
 
-if __name__ == "__main__":
-    pass
+if __name__=="__main__":
+    uvicorn.run(app="config:app",host="127.0.0.1",port=8000,reload=True)
