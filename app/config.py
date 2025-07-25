@@ -4,9 +4,9 @@ from router import router
 
 from db import engine
 
-app=FastAPI()
+app=FastAPI(title="library API")
 
 Base.metadata.create_all(bind=engine)
-app.include_router(router=router.router,tags=["Basic"])
-
+app.include_router(router=router.router,tags=["auth"])
+app.include_router(router=router.user_router,tags=["user"])
 

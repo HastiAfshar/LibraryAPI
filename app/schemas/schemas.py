@@ -9,6 +9,21 @@ class BaseUser(BaseModel):
 
 
 
-class User(BaseUser):
+class SignupResponse(BaseModel):
     message:str
+    user_id:int
+    username:str
+
+
+class UserUpdateResponse(BaseModel):
+    message:str
+    user_id:int
+
+class UserDeleteResponse(BaseModel):
+    message:str
+    user_id: int
     
+class SearchUserResponse(BaseModel):
+    username : str
+    id:int
+    email:EmailStr
