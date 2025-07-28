@@ -1,10 +1,11 @@
-from fastapi import APIRouter,Depends,HTTPException,status,Path,Query,UploadFile,File,Form
+from fastapi import APIRouter,Depends,HTTPException,status,Path,Query
 from models.models import Base,User
 from schemas.schemas import BaseUser,SignupResponse,UserUpdateResponse,SearchUserResponse,UserDeleteResponse
 from sqlalchemy.orm import Session
 from db import get_db,engine
 import bcrypt
 from typing import List,Optional
+
 
 router=APIRouter(prefix="/auth")
 
@@ -13,10 +14,7 @@ user_router=APIRouter(prefix="/user")
 Base.metadata.create_all(bind=engine)
 
 
-@router.get("/")
-def welcome() -> str:
-    
-    return "welcome"
+
 
 
 @router.post(path="/signup",response_model=SignupResponse,status_code=status.HTTP_201_CREATED)
@@ -78,5 +76,6 @@ def search_user(start : int = Query(1,ge=1),end:int = Query(100,le=1000),db:Sess
     if not db_user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,detail="users not found")
     return db_user
+
 
 

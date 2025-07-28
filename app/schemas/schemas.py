@@ -1,4 +1,5 @@
 from pydantic import BaseModel,EmailStr
+from typing import Optional
 
 
 
@@ -27,3 +28,13 @@ class SearchUserResponse(BaseModel):
     username : str
     id:int
     email:EmailStr
+
+
+class BookUpdate(BaseModel):
+    id: int
+    title:Optional[str] = None
+    publisher:Optional[str] = None
+    author:Optional[str] = None
+    page_count:Optional[int] = None
+    user_id:Optional[int] = None
+    
