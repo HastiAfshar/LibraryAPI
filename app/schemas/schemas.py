@@ -7,13 +7,29 @@ class BaseUser(BaseModel):
     username:str
     email:EmailStr
     password:str
-
-
+    
 
 class SignupResponse(BaseModel):
     message:str
     user_id:int
     username:str
+    role:str
+    
+
+class LogIn(BaseModel):
+    email:EmailStr
+    password:str
+
+class LogInResponse(BaseModel):
+    message:str
+    role:str
+    access_token:str
+
+
+class ReadUserResponse(BaseModel):
+    username : str
+    id:int
+    email:EmailStr
 
 
 class UserUpdateResponse(BaseModel):
@@ -29,12 +45,26 @@ class SearchUserResponse(BaseModel):
     id:int
     email:EmailStr
 
+class UploudBook(BaseModel):
+    message:str
+    book_id:int
+    pdf_url:str
+    img_url:str
 
-class BookUpdate(BaseModel):
+class SearchBook(BaseModel):
     id: int
-    title:Optional[str] = None
-    publisher:Optional[str] = None
-    author:Optional[str] = None
-    page_count:Optional[int] = None
-    user_id:Optional[int] = None
+    title:str
+    publisher:str
+    author:str
+    page_count:int
+    downloud_url:str
+
+class DeleteMessageBook(BaseModel):
+    message:str 
+
+class UpdateMessageBook(BaseModel):
+    message:str 
+   
+
+
     

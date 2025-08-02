@@ -4,6 +4,8 @@ from router import user_router,book_router
 
 from db import engine
 
+Base.metadata.create_all(bind=engine)
+
 app=FastAPI(title="library API")
 
 Base.metadata.create_all(bind=engine)
@@ -14,5 +16,5 @@ app.include_router(router=book_router.file_router,tags=["book"])
 @app.get("/")
 def welcome() -> str:
     
-    return "welcome"
+    return "welcome friends :0"
 
