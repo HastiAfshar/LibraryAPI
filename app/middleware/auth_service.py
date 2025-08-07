@@ -24,6 +24,7 @@ def create_access_token(user_id: int, role: str):
         "exp": datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXP)
     }
     token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+    
     return token
 
 
@@ -37,4 +38,4 @@ def get_current_user(token: str = Depends(security)):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
 
-print(repr(SECRET_KEY),SECRET_KEY)
+

@@ -1,47 +1,62 @@
 from middleware.bucket import upload_file,delete_file,LIARA_BUCKET_NAME
 from fastapi import UploadFile,File,Form,APIRouter,Query,Depends,status,HTTPException
 from sqlalchemy.orm import Session
-from db import get_db,engine
+from db import get_db
 import bcrypt
 from schemas.schemas import SearchBook,UploudBook,DeleteMessageBook,UpdateMessageBook
 from models.models import Book
 from typing import Optional,Annotated
 
 
-file_router=APIRouter(prefix="/file")
+file_router=APIRouter(prefix = "/file")
 
-@file_router.post("/upload",response_model=UploudBook,status_code=status.HTTP_201_CREATED)
-def uploud_book(title:str=Form(...),publisher:str=Form(...),author:str=Form(...),page_count:int=Form(...),user_id:int=Form(...),pdf:UploadFile=File(...),img:UploadFile=File(...),db:Session=Depends(get_db)):
+@file_router.post("/upload", response_model = UploudBook, status_code = status.HTTP_201_CREATED)
+def uploud_book(
+                title:str = Form(...), publisher:str = Form(...),
+                author:str = Form(...), page_count:int = Form(...),
+                user_id:int = Form(...), pdf:UploadFile = File(...),
+                img:UploadFile = File(...), db:Session = Depends(get_db)):
 
     pdf_url=upload_file(pdf,f"test/{title}.pdf")
-    img_url=upload_file(pdf,f"test/{title}.png")
+    img_url=upload_file(img,f"test/{title}.png")
     
 
-    new_book = Book(title=title,publisher=publisher,author=author,page_count=page_count, download_url=pdf_url,user_id=user_id )
+    new_book = Book(
+                    title = title,publisher = publisher,
+                    author = author,page_count = page_count,
+                    download_url = pdf_url,user_id = user_id)
     
     db.add(new_book)
     db.commit()
-    return {"message":"file created","book_id":new_book.id,"pdf_url":pdf_url,"img_url":img_url}
+    return {"message":"file created", "book_id":new_book.id, "pdf_url":pdf_url, "img_url":img_url}
 
 
 
 
-@file_router.get("/search",response_model=SearchBook,status_code=status.HTTP_200_OK)
-def search_book(id:int=Query(ge=1),db:Session=Depends(get_db)):
+@file_router.get("/search",response_model = SearchBook,status_code = status.HTTP_200_OK)
+def search_book(id:int = Query(ge = 1),db:Session = Depends(get_db)):
+   
    db_book = db.query(Book).filter(Book.id == id).first()
+   
    if not db_book:
-        raise HTTPException(status_code=404,detail=f"book not found")
+        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail = f"book not found")
 
-   return {"id":db_book.id,"title":db_book.title,"publisher":db_book.publisher,"author":db_book.author ,"page_count":db_book.page_count,"downloud_url":db_book.download_url}
+   return {
+            "id":db_book.id, "title":db_book.title,
+           "publisher":db_book.publisher, "author":db_book.author,
+           "page_count":db_book.page_count, "downloud_url":db_book.download_url}
 
 
-@file_router.delete("/delete",response_model=DeleteMessageBook,status_code=status.HTTP_200_OK)
-def delete_book(id:int=Query(ge=1),db:Session=Depends(get_db)):
+@file_router.delete("/delete",response_model = DeleteMessageBook,status_code = status.HTTP_200_OK)
+def delete_book(id:int = Query(ge=1), db:Session = Depends(get_db)):
+    
     db_book = db.query(Book).filter(Book.id == id).first()
+    
     if not db_book:
-        raise HTTPException(status_code=404,detail=f"book not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"book not found")
+    
     key=f"test/{db_book.title}.pdf"
-    delete_file(bucket_name=LIARA_BUCKET_NAME,file_name=key)
+    delete_file(bucket_name = LIARA_BUCKET_NAME, file_name = key)
     
 
     db.delete(db_book)
@@ -49,11 +64,17 @@ def delete_book(id:int=Query(ge=1),db:Session=Depends(get_db)):
     return {"message":"book deleted"}
 
 
-@file_router.patch("/update",response_model=UpdateMessageBook,status_code=status.HTTP_200_OK)
-def update_book(id: int = Form(...),title:Optional[str]=Form(None),publisher:Optional[str]=Form(None),author:Optional[str]=Form(None),page_count:Optional[str]=Form(None),user_id:Optional[str]=Form(None),pdf: Annotated[UploadFile |str ,File()]=None,db:Session=Depends(get_db)):
+@file_router.patch("/update",response_model = UpdateMessageBook,status_code = status.HTTP_200_OK)
+def update_book(
+                id: int = Form(...),title:Optional[str]=Form(None),
+                publisher:Optional[str] = Form(None), author:Optional[str] = Form(None),
+                page_count:Optional[str] = Form(None), user_id:Optional[str] = Form(None),
+                pdf: Annotated[UploadFile | str, File()] = None, db:Session = Depends(get_db)):
+    
     db_book = db.query(Book).filter(Book.id == id).first()
+    
     if not db_book:
-        raise HTTPException(status_code=404,detail=f"book not found")
+        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail = f"book not found")
     
     old_title = db_book.title
     if title:
@@ -62,7 +83,6 @@ def update_book(id: int = Form(...),title:Optional[str]=Form(None),publisher:Opt
     if publisher:
         db_book.publisher = publisher
             
-    
     if author:
         db_book.author = author
 
@@ -74,11 +94,11 @@ def update_book(id: int = Form(...),title:Optional[str]=Form(None),publisher:Opt
     
     if pdf:
         old_key=f"test/{old_title}.pdf"
-        delete_file(bucket_name=LIARA_BUCKET_NAME,file_name=old_key)
+        delete_file(bucket_name = LIARA_BUCKET_NAME, file_name = old_key)
         
             
-        new_url=upload_file(pdf,f"test/{db_book.title}.pdf")
-        db_book.download_url=new_url
+        new_url=upload_file(pdf, f"test/{db_book.title}.pdf")
+        db_book.download_url = new_url
   
 
        

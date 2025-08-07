@@ -36,20 +36,24 @@ class UserUpdateResponse(BaseModel):
     message:str
     user_id:int
 
+
 class UserDeleteResponse(BaseModel):
     message:str
     user_id: int
-    
+
+
 class SearchUserResponse(BaseModel):
     username : str
     id:int
     email:EmailStr
+
 
 class UploudBook(BaseModel):
     message:str
     book_id:int
     pdf_url:str
     img_url:str
+
 
 class SearchBook(BaseModel):
     id: int
@@ -59,8 +63,10 @@ class SearchBook(BaseModel):
     page_count:int
     downloud_url:str
 
+
 class DeleteMessageBook(BaseModel):
     message:str 
+
 
 class UpdateMessageBook(BaseModel):
     message:str 
