@@ -55,12 +55,12 @@ def login(login_data:LogIn,db:Session=Depends(get_db)):
 
 @user_router.get(path="/read/{user_id}", response_model = ReadUserResponse,status_code = status.HTTP_200_OK)
 def read_user(
-    user_id:int = Path(ge=1),db:Session = Depends(get_db),
+    db:Session = Depends(get_db),
     current_user:dict = Depends(get_current_user)):
     
-    db_user = db.query(User).filter(User.id==user_id).first()
+    db_user = db.query(User).filter(User.id==current_user["user_id"]).first()
     if not db_user:
-        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,detail = f"user with {user_id} not found")
+        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,detail = f"user with not found")
     
     if current_user["role"] != "admin" and current_user["user_id"] != db_user.id:
         raise HTTPException(status_code = status.HTTP_403_FORBIDDEN,detail = "you can't update user data :|")
@@ -72,12 +72,12 @@ def read_user(
 
 @user_router.patch("/update/{user_id}",response_model=UserUpdateResponse,status_code=status.HTTP_200_OK)
 def update_user(
-                user_data:BaseUser, user_id: int = Path(ge=1),
+                user_data:BaseUser,
                 db:Session = Depends(get_db),
                 current_user:dict = Depends(get_current_user)):
     
     
-    db_user=db.query(User).filter(User.id==user_id).first()
+    db_user=db.query(User).filter(User.id==current_user["user_id"]).first()
     if not db_user:
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,detail = "user with {user_id} not found")
     
@@ -97,12 +97,15 @@ def update_user(
 
 
 @user_router.delete("/delete/{user_id}",response_model=UserDeleteResponse,status_code=status.HTTP_200_OK)
-def delete_user(user_id:int = Path(ge=1),db:Session = Depends(get_db)):
+def delete_user(db:Session = Depends(get_db),current_user:dict = Depends(get_current_user)):
     
-    db_user = db.query(User).filter(User.id==user_id).first()
+    db_user = db.query(User).filter(User.id==current_user["user_id"]).first()
     
     if not db_user:
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail = "user with {user_id} not found")
+    
+    if current_user["role"] != "admin" and current_user["user_id"] != db_user.id:
+        raise HTTPException(status_code = status.HTTP_403_FORBIDDEN,detail = "you can't delete user data")
 
     db.delete(db_user)
     db.commit()
@@ -111,12 +114,18 @@ def delete_user(user_id:int = Path(ge=1),db:Session = Depends(get_db)):
 
 
 @user_router.get("/search/", response_model = List[SearchUserResponse], status_code = status.HTTP_200_OK)
-def search_user(start:int = Query(1,ge=1), end:int = Query(100,le=1000), db:Session = Depends(get_db)):
+def search_user(
+    start:int = Query(1,ge=1), end:int = Query(100,le=1000), 
+    db:Session = Depends(get_db), current_user:dict = Depends(get_current_user)):
     
     db_user = db.query(User).filter(User.id >= start,User.id <= end ).all()
     
     if not db_user:
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,detail = "users not found")
+    
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code = status.HTTP_403_FORBIDDEN,detail = "you can't search users")
+
     
     return db_user
 

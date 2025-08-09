@@ -4,9 +4,9 @@ from sqlalchemy.orm import Session
 from db import get_db
 import bcrypt
 from schemas.schemas import SearchBook,UploudBook,DeleteMessageBook,UpdateMessageBook
-from models.models import Book
+from models.models import Book , User
 from typing import Optional,Annotated
-
+from middleware.auth_service import get_current_user
 
 file_router=APIRouter(prefix = "/file")
 
@@ -14,17 +14,22 @@ file_router=APIRouter(prefix = "/file")
 def uploud_book(
                 title:str = Form(...), publisher:str = Form(...),
                 author:str = Form(...), page_count:int = Form(...),
-                user_id:int = Form(...), pdf:UploadFile = File(...),
-                img:UploadFile = File(...), db:Session = Depends(get_db)):
+                pdf:UploadFile = File(...),img:UploadFile = File(...),
+                db:Session = Depends(get_db), current_user:dict = Depends(get_current_user)):
+    
+    
 
     pdf_url=upload_file(pdf,f"test/{title}.pdf")
     img_url=upload_file(img,f"test/{title}.png")
-    
 
+    
     new_book = Book(
                     title = title,publisher = publisher,
                     author = author,page_count = page_count,
-                    download_url = pdf_url,user_id = user_id)
+                    download_url = pdf_url , user_id = current_user["user_id"])
+    
+    if current_user["role"] != "admin" and current_user["user_id"] != new_book.user_id : 
+        raise HTTPException(status_code = status.HTTP_403_FORBIDDEN,detail = "you can't uploud book and  image:|")
     
     db.add(new_book)
     db.commit()
@@ -33,27 +38,40 @@ def uploud_book(
 
 
 
-@file_router.get("/search",response_model = SearchBook,status_code = status.HTTP_200_OK)
-def search_book(id:int = Query(ge = 1),db:Session = Depends(get_db)):
+@file_router.get("/search",response_model = SearchBook, status_code = status.HTTP_200_OK)
+def search_book(
+    id:int = Query(ge = 1),db:Session = Depends(get_db),
+    current_user:dict = Depends(get_current_user)):
    
    db_book = db.query(Book).filter(Book.id == id).first()
    
-   if not db_book:
-        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail = f"book not found")
+   if current_user["user_id"] == db_book.user_id:
+        return {
+                "id":db_book.id, "title":db_book.title,
+                "publisher":db_book.publisher, "author":db_book.author,
+                "page_count":db_book.page_count, "downloud_url":db_book.download_url}
+       
+       
+   if current_user["user_id"] != db_book.user_id:
+        return {
+                "id":db_book.id, "title":db_book.title,
+                "publisher":db_book.publisher, "author":db_book.author,
+                "page_count":db_book.page_count}
 
-   return {
-            "id":db_book.id, "title":db_book.title,
-           "publisher":db_book.publisher, "author":db_book.author,
-           "page_count":db_book.page_count, "downloud_url":db_book.download_url}
 
-
-@file_router.delete("/delete",response_model = DeleteMessageBook,status_code = status.HTTP_200_OK)
-def delete_book(id:int = Query(ge=1), db:Session = Depends(get_db)):
+@file_router.delete("/delete",response_model = DeleteMessageBook, status_code = status.HTTP_200_OK)
+def delete_book(
+    id:int = Query(ge=1), db:Session = Depends(get_db), 
+    current_user:dict = Depends(get_current_user)):
     
+
     db_book = db.query(Book).filter(Book.id == id).first()
     
     if not db_book:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"book not found")
+    
+    if current_user["role"] != "admin" and current_user["user_id"] != db_book.user_id : 
+        raise HTTPException(status_code = status.HTTP_403_FORBIDDEN,detail = "you can't delete book ")
     
     key=f"test/{db_book.title}.pdf"
     delete_file(bucket_name = LIARA_BUCKET_NAME, file_name = key)
@@ -68,13 +86,16 @@ def delete_book(id:int = Query(ge=1), db:Session = Depends(get_db)):
 def update_book(
                 id: int = Form(...),title:Optional[str]=Form(None),
                 publisher:Optional[str] = Form(None), author:Optional[str] = Form(None),
-                page_count:Optional[str] = Form(None), user_id:Optional[str] = Form(None),
-                pdf: Annotated[UploadFile | str, File()] = None, db:Session = Depends(get_db)):
+                page_count:Optional[str] = Form(None), pdf: Annotated[UploadFile | str, File()] = None, 
+                db:Session = Depends(get_db), current_user:dict = Depends(get_current_user)):
     
     db_book = db.query(Book).filter(Book.id == id).first()
     
     if not db_book:
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail = f"book not found")
+    
+    if current_user["role"] != "admin" and current_user["user_id"] != db_book.user_id : 
+        raise HTTPException(status_code = status.HTTP_403_FORBIDDEN,detail = "you can't update book ")
     
     old_title = db_book.title
     if title:
@@ -89,8 +110,7 @@ def update_book(
     if page_count:
         db_book.page_count = page_count
 
-    if user_id:
-        db_book.user_id =user_id
+
     
     if pdf:
         old_key=f"test/{old_title}.pdf"
