@@ -2,9 +2,8 @@ from middleware.bucket import upload_file,delete_file,LIARA_BUCKET_NAME
 from fastapi import UploadFile,File,Form,APIRouter,Query,Depends,status,HTTPException
 from sqlalchemy.orm import Session
 from db import get_db
-import bcrypt
-from schemas.schemas import SearchBook,UploudBook,DeleteMessageBook,UpdateMessageBook
-from models.models import Book , User
+from app.schemas.response_schemas import SearchBook,UploudBook,DeleteMessageBook,UpdateMessageBook
+from models.models import Book 
 from typing import Optional,Annotated
 from middleware.auth_service import get_current_user
 
@@ -45,18 +44,6 @@ def search_book(
    
    db_book = db.query(Book).filter(Book.id == id).first()
    
-   if current_user["user_id"] == db_book.user_id:
-        return {
-                "id":db_book.id, "title":db_book.title,
-                "publisher":db_book.publisher, "author":db_book.author,
-                "page_count":db_book.page_count, "downloud_url":db_book.download_url}
-       
-       
-   if current_user["user_id"] != db_book.user_id:
-        return {
-                "id":db_book.id, "title":db_book.title,
-                "publisher":db_book.publisher, "author":db_book.author,
-                "page_count":db_book.page_count}
 
 
 @file_router.delete("/delete",response_model = DeleteMessageBook, status_code = status.HTTP_200_OK)

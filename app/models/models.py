@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, VARCHAR, TIMESTAMP, func ,ForeignKey,LargeBinary
+from sqlalchemy import Column, Integer, String, VARCHAR, TIMESTAMP, func ,ForeignKey,LargeBinary,BOOLEAN
 from sqlalchemy.orm import declarative_base,relationship
 
 Base = declarative_base()
@@ -9,10 +9,11 @@ class User(Base):
     __tablename__ = 'users'
     
     id = Column(Integer, primary_key=True)
-    email = Column(String(120),unique=True , nullable=False)
+    email = Column(String(120), unique=True, nullable=False)
     username = Column(String(120), nullable=False)
     password = Column(LargeBinary(1500), nullable=False)
     role = Column(String,default="user")
+    delete_account= Column(BOOLEAN, default=False)
     created_at = Column(TIMESTAMP,server_default=func.now() ,nullable=False)
     updated_at = Column(TIMESTAMP, default=func.now(),nullable=False)
     

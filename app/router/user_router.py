@@ -1,6 +1,6 @@
 from fastapi import APIRouter,Depends,HTTPException,status,Path,Query
 from models.models import Base,User
-from schemas.schemas import BaseUser,SignupResponse,UserUpdateResponse,SearchUserResponse,UserDeleteResponse,ReadUserResponse,LogIn,LogInResponse
+from app.schemas.response_schemas import BaseUser,SignupResponse,UserUpdateResponse,SearchUserResponse,UserDeleteResponse,ReadUserResponse,LogIn,LogInResponse
 from sqlalchemy.orm import Session
 from db import get_db
 import bcrypt
