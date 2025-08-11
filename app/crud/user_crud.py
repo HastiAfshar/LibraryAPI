@@ -34,8 +34,8 @@ def create_user(user_data:BaseUser, db:Session):
 
 
 
-def read_user_info(login_data:LogIn,db:Session):
-    
+def read_login_info(login_data:LogIn,db:Session):
+
     db_user=db.query(User).filter(User.email == login_data.email).first()
     if not db_user:
         raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail = "user not found")
@@ -49,5 +49,63 @@ def read_user_info(login_data:LogIn,db:Session):
 
 
 
-def read_user(db:Session, user_id : int):
-    pass
+def read_user_info( current_user:dict, db:Session):
+    db_user = db.query(User).filter(User.id==current_user["user_id"]).first()
+    if not db_user:
+        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,detail = f"user with not found")
+    
+    if current_user["role"] != "admin" and current_user["user_id"] != db_user.id:
+        raise HTTPException(status_code = status.HTTP_403_FORBIDDEN,detail = "you can't update user data :|")
+   
+    return {"username":db_user.username,"id":db_user.id,"email":db_user.email}
+
+
+
+def update_user_info(user_data:BaseUser,db:Session ,current_user:dict):
+
+    db_user=db.query(User).filter(User.id==current_user["user_id"]).first()
+    if not db_user:
+        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,detail = "user with {user_id} not found")
+    
+    if current_user["role"] != "admin" and current_user["user_id"] != db_user.id:
+        raise HTTPException(status_code = status.HTTP_403_FORBIDDEN,detail = "you can't update user data :|")
+    
+    else:
+        db_user.username = user_data.username
+        db_user.email = user_data.email
+        hashed_password = bcrypt.hashpw(password = user_data.password.encode(), salt = bcrypt.gensalt())
+        db_user.password = hashed_password
+    
+
+    db.commit()
+
+    return {"message":"user updated","user_id":db_user.id}
+
+
+def delete_user_info(current_user:dict ,db:Session):
+    db_user = db.query(User).filter(User.id==current_user["user_id"]).first()
+    
+    if not db_user:
+        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail = "user with {user_id} not found")
+    
+    if current_user["role"] != "admin" and current_user["user_id"] != db_user.id:
+        raise HTTPException(status_code = status.HTTP_403_FORBIDDEN,detail = "you can't delete user data")
+
+    db.delete(db_user)
+    db.commit()
+
+    return {"message":"user deleted","user_id":db_user.id}
+
+
+def search_user_info(start:int, end:int, db:Session, current_user:dict):
+
+    db_user = db.query(User).filter(User.id >= start,User.id <= end ).all()
+    
+    if not db_user:
+        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND,detail = "users not found")
+    
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code = status.HTTP_403_FORBIDDEN,detail = "you can't search users")
+
+    
+    return db_user
