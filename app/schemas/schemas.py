@@ -1,13 +1,31 @@
-from pydantic import BaseModel,EmailStr
+from pydantic import BaseModel,EmailStr,field_validator,Field
+import re
 
 
 
 
 class BaseUser(BaseModel):
-    username:str
+    username:str = Field(min_length=3,max_length=35)
     email:EmailStr
     password:str
     
+
+
+    @field_validator("username")
+    @classmethod  
+    def validate_username(cls, value:str) -> str:
+        if not re.match(r"^[A-Za-z0-9_]",value):
+            raise ValueError("username can only contain letters")
+        return value
+    
+    
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, value:str) -> str:
+        if re.match(r"^(?=.*[A-Za-z])(?=.*\d).+$",value):
+            raise ValueError("password must contain  letter and number")
+        return value
+
 
 class SignupResponse(BaseModel):
     message:str

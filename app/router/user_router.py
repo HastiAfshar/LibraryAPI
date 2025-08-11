@@ -1,42 +1,23 @@
 from fastapi import APIRouter,Depends,HTTPException,status,Path,Query
 from models.models import Base,User
-from app.schemas.response_schemas import BaseUser,SignupResponse,UserUpdateResponse,SearchUserResponse,UserDeleteResponse,ReadUserResponse,LogIn,LogInResponse
+from schemas.schemas import BaseUser,SignupResponse,UserUpdateResponse,SearchUserResponse,UserDeleteResponse,ReadUserResponse,LogIn,LogInResponse
 from sqlalchemy.orm import Session
 from db import get_db
 import bcrypt
 from typing import List
 from middleware.auth_service import create_access_token , get_current_user
-
+from crud import user_crud
 
 router=APIRouter(prefix="/auth")
-
 user_router=APIRouter(prefix="/user")
 
 
 @router.post(path = "/signup",response_model = SignupResponse,status_code = status.HTTP_201_CREATED )
-def create_user(user_data:BaseUser, db:Session = Depends(get_db)):
-     
-     if db.query(User).filter(User.email == user_data.email).first():
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="email already exist")
-     
-     db_count= db.query(User).count()
-     
-     if db_count == 0:
-         role = "admin"
-     else: 
-         role = "user"
-
-     new_user = User(username = user_data.username, email = user_data.email, role = role)
-   
-     hashed_password = bcrypt.hashpw(password = user_data.password.encode(), salt = bcrypt.gensalt())
-     new_user.password = hashed_password
-
-     db.add(new_user)
-     db.commit()
+def signup_user(user_data:BaseUser, db:Session = Depends(get_db)):
+    return user_crud.create_user(user_data=user_data,db=db)
 
      
-     return {"message":"new user created","user_id":new_user.id,"username":new_user.username,"role":new_user.role}
-
+    
 @router.post("/login",response_model=LogInResponse)
 def login(login_data:LogIn,db:Session=Depends(get_db)):
     
