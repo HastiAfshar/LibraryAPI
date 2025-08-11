@@ -22,7 +22,7 @@ class BaseUser(BaseModel):
     @field_validator("password")
     @classmethod
     def validate_password(cls, value:str) -> str:
-        if re.match(r"^(?=.*[A-Za-z])(?=.*\d).+$",value):
+        if not re.match(r"^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]+$",value):
             raise ValueError("password must contain  letter and number")
         return value
 

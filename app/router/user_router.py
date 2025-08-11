@@ -20,18 +20,9 @@ def signup_user(user_data:BaseUser, db:Session = Depends(get_db)):
     
 @router.post("/login",response_model=LogInResponse)
 def login(login_data:LogIn,db:Session=Depends(get_db)):
+    return user_crud.read_user_info(login_data=login_data,db=db)
     
-    db_user=db.query(User).filter(User.email == login_data.email).first()
     
-    if not db_user:
-        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail = "user not found")
-    
-    if not bcrypt.checkpw(login_data.password.encode(), db_user.password):
-        raise HTTPException(status_code = status.HTTP_403_FORBIDDEN, detail = "password is wrong")
-
-
-    token = create_access_token(user_id = db_user.id,role = db_user.role)
-    return {"message":"you log in your account ", "role":db_user.role, "access_token":token }
 
 
 @user_router.get(path="/read/{user_id}", response_model = ReadUserResponse,status_code = status.HTTP_200_OK)
