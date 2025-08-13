@@ -1,4 +1,4 @@
-from middleware.bucket import upload_file,delete_file,LIARA_BUCKET_NAME
+
 from fastapi import UploadFile,File,Form,APIRouter,Query,Depends,status,HTTPException
 from sqlalchemy.orm import Session
 from db import get_db
@@ -6,6 +6,9 @@ from schemas.schemas import SearchBook,UploudBook,DeleteMessageBook,UpdateMessag
 from models.models import Book 
 from typing import Optional,Annotated
 from middleware.auth_service import get_current_user
+from crud import book_crud
+from typing import Optional
+
 
 file_router=APIRouter(prefix = "/file")
 
@@ -16,23 +19,12 @@ def uploud_book(
                 pdf:UploadFile = File(...),img:UploadFile = File(...),
                 db:Session = Depends(get_db), current_user:dict = Depends(get_current_user)):
     
+    return book_crud.uploud_book_info(
+        title = title, publisher = publisher,
+        author = author ,page_count = page_count,
+        pdf = pdf, img = img, 
+        db = db, current_user = current_user)
     
-
-    pdf_url=upload_file(pdf,f"test/{title}.pdf")
-    img_url=upload_file(img,f"test/{title}.png")
-
-    
-    new_book = Book(
-                    title = title,publisher = publisher,
-                    author = author,page_count = page_count,
-                    download_url = pdf_url , user_id = current_user["user_id"])
-    
-    if current_user["role"] != "admin" and current_user["user_id"] != new_book.user_id : 
-        raise HTTPException(status_code = status.HTTP_403_FORBIDDEN,detail = "you can't uploud book and  image:|")
-    
-    db.add(new_book)
-    db.commit()
-    return {"message":"file created", "book_id":new_book.id, "pdf_url":pdf_url, "img_url":img_url}
 
 
 
@@ -41,8 +33,11 @@ def uploud_book(
 def search_book(
     id:int = Query(ge = 1),db:Session = Depends(get_db),
     current_user:dict = Depends(get_current_user)):
+
+    return book_crud.search_book_info(id=id, db=db, current_user=current_user)
    
-   db_book = db.query(Book).filter(Book.id == id).first()
+   
+       
    
 
 
@@ -50,23 +45,11 @@ def search_book(
 def delete_book(
     id:int = Query(ge=1), db:Session = Depends(get_db), 
     current_user:dict = Depends(get_current_user)):
+
+    return book_crud.delete_book_info(id=id, db=db, current_user=current_user)
+    
     
 
-    db_book = db.query(Book).filter(Book.id == id).first()
-    
-    if not db_book:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"book not found")
-    
-    if current_user["role"] != "admin" and current_user["user_id"] != db_book.user_id : 
-        raise HTTPException(status_code = status.HTTP_403_FORBIDDEN,detail = "you can't delete book ")
-    
-    key=f"test/{db_book.title}.pdf"
-    delete_file(bucket_name = LIARA_BUCKET_NAME, file_name = key)
-    
-
-    db.delete(db_book)
-    db.commit()
-    return {"message":"book deleted"}
 
 
 @file_router.patch("/update",response_model = UpdateMessageBook,status_code = status.HTTP_200_OK)
@@ -76,45 +59,12 @@ def update_book(
                 page_count:Optional[str] = Form(None), pdf: Annotated[UploadFile | str, File()] = None, 
                 db:Session = Depends(get_db), current_user:dict = Depends(get_current_user)):
     
-    db_book = db.query(Book).filter(Book.id == id).first()
+    return book_crud.update_book_info(
+        id=id,title = title, publisher = publisher,
+        author = author ,page_count = page_count,
+        pdf = pdf, db = db, current_user = current_user)
     
-    if not db_book:
-        raise HTTPException(status_code = status.HTTP_404_NOT_FOUND, detail = f"book not found")
-    
-    if current_user["role"] != "admin" and current_user["user_id"] != db_book.user_id : 
-        raise HTTPException(status_code = status.HTTP_403_FORBIDDEN,detail = "you can't update book ")
-    
-    old_title = db_book.title
-    if title:
-        db_book.title =title
-           
-    if publisher:
-        db_book.publisher = publisher
-            
-    if author:
-        db_book.author = author
-
-    if page_count:
-        db_book.page_count = page_count
-
-
-    
-    if pdf:
-        old_key=f"test/{old_title}.pdf"
-        delete_file(bucket_name = LIARA_BUCKET_NAME, file_name = old_key)
-        
-            
-        new_url=upload_file(pdf, f"test/{db_book.title}.pdf")
-        db_book.download_url = new_url
-  
-
-       
-        
-  
-    db.commit()
-    db.refresh(db_book)
-
-    return {"message":"book updated"}
+   
 
     
     
