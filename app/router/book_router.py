@@ -5,7 +5,7 @@ from db import get_db
 from schemas.schemas import SearchBook,UploudBook,DeleteMessageBook,UpdateMessageBook
 from models.models import Book 
 from typing import Optional,Annotated
-from middleware.auth_service import get_current_user
+from middleware.auth_service import get_current_user,optional_get_current_user
 from crud import book_crud
 from typing import Optional
 
@@ -29,10 +29,10 @@ def uploud_book(
 
 
 
-@file_router.get("/search",response_model = SearchBook, status_code = status.HTTP_200_OK)
+@file_router.get("/search", status_code = status.HTTP_200_OK)
 def search_book(
     id:int = Query(ge = 1),db:Session = Depends(get_db),
-    current_user:dict = Depends(get_current_user)):
+    current_user:dict = Depends(optional_get_current_user)):
 
     return book_crud.search_book_info(id=id, db=db, current_user=current_user)
    

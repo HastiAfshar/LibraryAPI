@@ -10,6 +10,7 @@ def create_user(user_data:BaseUser, db:Session):
     if db.query(User).filter(User.email == user_data.email).first():
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="email already exist")
     
+    
     db_count= db.query(User).count()
     if db_count == 0:
         role = "admin"
@@ -90,10 +91,12 @@ def delete_user_info(current_user:dict ,db:Session):
     
     if current_user["role"] != "admin" and current_user["user_id"] != db_user.id:
         raise HTTPException(status_code = status.HTTP_403_FORBIDDEN,detail = "you can't delete user data")
-
-    db.delete(db_user)
+    
+    db.query(User).filter(User.id== db_user.id).update({"delete_account":True})
+    
     db.commit()
 
+    
     return {"message":"user deleted","user_id":db_user.id}
 
 

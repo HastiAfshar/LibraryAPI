@@ -29,7 +29,7 @@ def uploud_book_info(
     return {"message":"file created", "book_id":new_book.id, "pdf_url":pdf_url, "img_url":img_url}
 
 
-def search_book_info( id:int, db:Session, current_user:dict):
+def search_book_info( id:int, db:Session, current_user:Optional[dict]):
 
     db_book = db.query(Book).filter(Book.id == id).first()
     if not db_book:

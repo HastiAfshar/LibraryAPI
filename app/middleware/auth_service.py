@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException, status
-from fastapi.security import HTTPBearer,HTTPAuthorizationCredentials
+from fastapi.security import HTTPBearer
 import jwt
 from datetime import datetime, timedelta
 import os
@@ -28,10 +28,8 @@ def create_access_token(user_id: int, role: str):
     return token
 
 
-def get_current_user(token:str = Depends(security)):
-
-    if not token:
-        return None
+def get_current_user(token:Optional[str] = Depends(security)):
+  
     try:
         
         payload = jwt.decode(token.credentials, SECRET_KEY, algorithms=[ALGORITHM])
@@ -43,3 +41,14 @@ def get_current_user(token:str = Depends(security)):
 
 
 
+def optional_get_current_user(token:Optional[str] = Depends(security)):
+    
+    if not token:
+        return None
+  
+    try:     
+        payload = jwt.decode(token.credentials, SECRET_KEY, algorithms=[ALGORITHM])
+        return {"user_id": payload.get("user_id"), "role": payload.get("role")}
+ 
+    except jwt.InvalidTokenError:
+        return None
